@@ -30,8 +30,9 @@ const updatePresence = async () => {
             timeout: STATUS_TIMEOUT
         });
         client.user.setPresence(onlinePresence(fullQueryResponse))
-    } catch {
+    } catch (e) {
         client.user.setPresence(offlinePresence())
+        console.error(e);
     }
 }
 
@@ -55,9 +56,10 @@ client.on('message', async (msg: any) => {
             const onlineStatus = onlineStatusEmbed(fullQueryResponse);
             msg.reply(onlineStatus);
 
-        } catch {
+        } catch (e) {
             const offlineStatus = offlineStatusEmbed()
             msg.reply(offlineStatus);
+            console.error(e);
         }
     }
 });

@@ -17,7 +17,7 @@ const onlineStatusEmbed = (response: StatusResponse) => {
         .setAuthor('Minecraft Server Status')
         .addField(`Server Status: ${OnlineStatusIcons.ONLINE}`, 'Online')
         .addField('Players:', `${response.onlinePlayers} / ${response.maxPlayers}`)
-        .addField('Players:', playerNames.join(', '))
+        .addField('Players:', playerNames.join(', ') || 'Empty AF')
         .setTimestamp()
 }
 
