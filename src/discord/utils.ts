@@ -42,7 +42,7 @@ const startupPresence = () => (
 const onlinePresence = (response: StatusResponse) => (
     {
         activity: {
-            name: `${response.onlinePlayers} / ${response.maxPlayers}`,
+            name: `Minecraft @ ${response.host} | Players: ${response.onlinePlayers} / ${response.maxPlayers}`,
             type: 'PLAYING',
         },
         status: 'online'
