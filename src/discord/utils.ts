@@ -53,7 +53,8 @@ const offlinePresence = () => (
     {
         activity: {
             name: 'Server offline',
-            type: 'WATCHING'
+            type: 'WATCHING',
+            url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
         },
         status: 'dnd'
     }
