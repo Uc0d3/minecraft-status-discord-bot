@@ -2,9 +2,11 @@ require('dotenv').config()
 
 const Discord = require('discord.js');
 const minecraftUtil = require('minecraft-server-util');
+const fetch = require('node-fetch');
 
-import {STATUS_COMMAND} from "./consts";
+import {INSULT_COMMAND, STATUS_COMMAND} from "./consts";
 import {
+    getUserFromMention,
     offlinePresence,
     offlineStatusEmbed,
     onlinePresence,
@@ -59,6 +61,22 @@ client.on('message', async (msg: any) => {
         } catch (e) {
             const offlineStatus = offlineStatusEmbed()
             msg.reply(offlineStatus);
+            console.error(e);
+        }
+    }
+    if (msg.content.startsWith(INSULT_COMMAND)) {
+        const withoutPrefix = msg.content.slice(1);
+        const split = withoutPrefix.split(/ +/);
+        const args = split.slice(1);
+        const user = getUserFromMention(client, args[0]);
+        if (!user) {
+            return msg.reply('Please use a proper mention if you want to insult somebody');
+        }
+        try {
+            const res = await fetch('https://insult.mattbas.org/api/insult')
+            const insult  = await res.text();
+            return msg.channel.send(`<@${user.id}> ${insult}`);
+        } catch (e) {
             console.error(e);
         }
     }
