@@ -68,14 +68,18 @@ client.on('message', async (msg: any) => {
         const withoutPrefix = msg.content.slice(1);
         const split = withoutPrefix.split(/ +/);
         const args = split.slice(1);
-        const user = getUserFromMention(client, args[0]);
-        if (!user) {
-            return msg.reply('Please use a proper mention if you want to insult somebody');
-        }
+
         try {
             const res = await fetch('https://insult.mattbas.org/api/insult')
             const insult  = await res.text();
-            return msg.channel.send(`<@${user.id}> ${insult}`);
+            const user = getUserFromMention(client, args[0]);
+
+            if (user) {
+                return msg.channel.send(`<@${user.id}> ${insult}`);
+
+            } else {
+                msg.reply(insult);
+            }
         } catch (e) {
             console.error(e);
         }
