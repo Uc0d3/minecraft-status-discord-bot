@@ -1,5 +1,6 @@
-import { Client } from "discord.js";
+import {Client, Message, PresenceData} from "discord.js";
 import {StatusResponse} from "minecraft-server-util/dist/model/StatusResponse";
+import {wait} from "../utils/wait";
 const Discord = require('discord.js');
 
 
@@ -9,38 +10,48 @@ enum OnlineStatusIcons {
 }
 
 const onlineStatusEmbed = (response: StatusResponse) => {
-    const { MINECRAFT_SERVER } = process.env
     const playerNames = response.samplePlayers?.map(p => p.name) || [];
 
-    return new Discord.MessageEmbed()
+    const message = new Discord.MessageEmbed()
         .setColor('#43b581')
-        .setTitle(`Join: ${MINECRAFT_SERVER}`)
+        .setTitle(`Join: ${response.host}`)
         .setAuthor('Minecraft Server Status')
-        .addField(`Server Status: ${OnlineStatusIcons.ONLINE}`, 'Online')
-        .addField('Players:', `${response.onlinePlayers} / ${response.maxPlayers}`)
-        .addField('Players:', playerNames.join(', ') || 'Empty AF')
-        .setTimestamp()
+        .addField(`Server Status`, `Online ${OnlineStatusIcons.ONLINE}`, true)
+        .addField('Players:', `${response.onlinePlayers} / ${response.maxPlayers}`, true)
+        .addField('Port', response.port, true)
+        .addField('Version', response.version, true);
+
+    if (playerNames?.length) {
+        message.addField('Players:', playerNames.join(', '));
+    }
+
+    message.setTimestamp();
+
+    return message;
 }
 
-const offlineStatusEmbed = () => {
+const offlineStatusEmbed = (host: string, port: number) => {
     return new Discord.MessageEmbed()
         .setColor('#f04747')
         .setTitle('Minecraft Server DOWN :(')
         .setAuthor('Minecraft Server Status')
-        .addField(`Server Status: ${OnlineStatusIcons.OFFLINE}`, 'Offline')
+        .addField('Server Status', `Offline ${OnlineStatusIcons.OFFLINE}`, true)
+        .addField(`Host`, host, true)
+        .addField(`Port`, port, true)
         .setTimestamp()
 }
 
-const startupPresence = () => (
+const startupPresence = (): PresenceData => (
     {
         activity: {
             name: 'Checking server',
             type: 'WATCHING'
-        }, status: 'idle'
+        },
+        status: 'idle'
     }
 )
 
-const onlinePresence = (response: StatusResponse) => (
+const onlinePresence = (response: StatusResponse): PresenceData => (
     {
         activity: {
             name: `Minecraft ${response.onlinePlayers} / ${response.maxPlayers} @ ${response.host}`,
@@ -50,7 +61,7 @@ const onlinePresence = (response: StatusResponse) => (
     }
 )
 
-const offlinePresence = () => (
+const offlinePresence = (): PresenceData => (
     {
         activity: {
             name: 'Server offline',
@@ -75,6 +86,15 @@ function getUserFromMention(client: Client, mention: string) {
     }
 }
 
+const sendDelayed = async ( callback: () => Promise<Message>, msg: Message, delay: number = 0): Promise<Message> => {
+    await msg.channel.stopTyping();
+    msg.channel.startTyping();
+    await wait(delay);
+    const newMsg = await callback();
+    await msg.channel.stopTyping();
+    return newMsg;
+}
+
 export {
     onlineStatusEmbed,
     offlineStatusEmbed,
@@ -82,4 +102,5 @@ export {
     onlinePresence,
     offlinePresence,
     getUserFromMention,
+    sendDelayed
 };

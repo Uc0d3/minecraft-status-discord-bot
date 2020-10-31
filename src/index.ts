@@ -1,89 +1,40 @@
 require('dotenv').config()
-
-const Discord = require('discord.js');
-const minecraftUtil = require('minecraft-server-util');
-const fetch = require('node-fetch');
-
-import {INSULT_COMMAND, STATUS_COMMAND} from "./consts";
-import {
-    getUserFromMention,
-    offlinePresence,
-    offlineStatusEmbed,
-    onlinePresence,
-    onlineStatusEmbed,
-    startupPresence
-} from "./discord/utils";
 import assert from "assert";
 
-const client = new Discord.Client();
+import {Client, Collection, Message} from "discord.js";
+import { BaseCommand } from "./Commands/BaseCommand";
+import commands from './Commands';
+import jobs from './Jobs';
+
+const client = new Client();
 
 const {
     DISCORD_LOGIN_TOKEN,
-    MINECRAFT_SERVER
+    COMMAND_PREFIX
 } = process.env;
 
-assert(MINECRAFT_SERVER);
+assert(COMMAND_PREFIX);
 
-const STATUS_TIMEOUT= 4000;
+const commandsCollection: Collection<string, BaseCommand> = new Collection();
 
-const updatePresence = async () => {
-    try {
-        const fullQueryResponse = await minecraftUtil.status(MINECRAFT_SERVER, {
-            timeout: STATUS_TIMEOUT
-        });
-        client.user.setPresence(onlinePresence(fullQueryResponse))
-    } catch (e) {
-        client.user.setPresence(offlinePresence())
-        console.error(e);
-    }
+for (const command of commands) {
+    commandsCollection.set(command.name, command);
 }
 
 client.on('ready', () => {
-    client.user.setPresence(startupPresence())
-    updatePresence().finally();
-    setInterval(updatePresence, 10000)
+    for (const job of jobs) {
+        (new job(client)).start();
+    }
 });
 
-client.on('message', async (msg: any) => {
-    if (msg.content.toLowerCase() === STATUS_COMMAND) {
-        msg.reply('Checking Server Status')
-            .then((newMsg: any) => {
-                newMsg.delete({ timeout: 10000 })
-            })
+client.on('message', async (msg: Message) => {
+    if (!msg.content.startsWith(COMMAND_PREFIX) || msg.author.bot) return;
 
-        try {
-            const fullQueryResponse = await minecraftUtil.status(MINECRAFT_SERVER, {
-                timeout: STATUS_TIMEOUT
-            });
-            const onlineStatus = onlineStatusEmbed(fullQueryResponse);
-            msg.reply(onlineStatus);
+    const args = msg.content.slice(COMMAND_PREFIX.length).trim().split(/ +/);
+    const command = args.shift()?.toLowerCase() || '';
 
-        } catch (e) {
-            const offlineStatus = offlineStatusEmbed()
-            msg.reply(offlineStatus);
-            console.error(e);
-        }
-    }
-    if (msg.content.startsWith(INSULT_COMMAND)) {
-        const withoutPrefix = msg.content.slice(1);
-        const split = withoutPrefix.split(/ +/);
-        const args = split.slice(1);
-
-        try {
-            const res = await fetch('https://insult.mattbas.org/api/insult')
-            const insult  = await res.text();
-            const user = getUserFromMention(client, args[0]);
-
-            if (user) {
-                return msg.channel.send(`<@${user.id}> ${insult}`);
-
-            } else {
-                msg.reply(insult);
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    }
+    if (!commandsCollection.has(command)) return;
+    await commandsCollection.get(command)?.execute(msg, args);
 });
 
 client.login(DISCORD_LOGIN_TOKEN);
