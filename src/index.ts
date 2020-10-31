@@ -25,6 +25,8 @@ client.on('ready', () => {
     for (const job of jobs) {
         (new job(client)).start();
     }
+
+    console.log('Bot Reddy')
 });
 
 client.on('message', async (msg: Message) => {

@@ -12,6 +12,7 @@ export default class Insult extends BaseCommand {
 
     async execute(msg: Message, args: string[]): Promise<void> {
         try {
+            msg.channel.startTyping();
             const res = await fetch('https://insult.mattbas.org/api/insult')
             const insult  = await res.text();
             const user = getUserFromMention(msg.client, args[0]);
@@ -23,6 +24,8 @@ export default class Insult extends BaseCommand {
             }
         } catch (e) {
             console.error(e);
+        } finally {
+            msg.channel.stopTyping(true);
         }
     }
 }

@@ -91,7 +91,7 @@ const sendDelayed = async ( callback: () => Promise<Message>, msg: Message, dela
     msg.channel.startTyping();
     await wait(delay);
     const newMsg = await callback();
-    await msg.channel.stopTyping();
+    await msg.channel.stopTyping(true);
     return newMsg;
 }
 
