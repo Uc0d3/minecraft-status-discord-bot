@@ -26,7 +26,7 @@ client.on('ready', () => {
         (new job(client)).start();
     }
 
-    console.log('Bot Reddy')
+    console.log('Bot Ready')
 });
 
 client.on('message', async (msg: Message) => {
